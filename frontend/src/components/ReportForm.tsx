@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createReport, getCategories } from '../api'
-import type { Category } from '../types'
+import type { Category, PrivacyMetrics } from '../types'
 import PrivacyRedactor from './PrivacyRedactor'
 
 type Props = {
@@ -24,6 +24,7 @@ export default function ReportForm({ onCreated }: Props) {
   const [description, setDescription] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [sanitizedBlob, setSanitizedBlob] = useState<Blob | null>(null)
+  const [privacyMetrics, setPrivacyMetrics] = useState<PrivacyMetrics | null>(null)
   const [sanitizedUrl, setSanitizedUrl] = useState('')
   const [durationMs, setDurationMs] = useState(0)
   const [startMs, setStartMs] = useState(0)
@@ -49,6 +50,7 @@ export default function ReportForm({ onCreated }: Props) {
   const chooseFile = (next: File | null) => {
     setFile(next)
     setSanitizedBlob(null)
+    setPrivacyMetrics(null)
     setSanitizedUrl('')
     setDurationMs(0)
     setStartMs(0)
@@ -56,15 +58,16 @@ export default function ReportForm({ onCreated }: Props) {
     setMessage('')
   }
 
-  const onSanitized = (blob: Blob, duration: number) => {
+  const onSanitized = (blob: Blob, duration: number, metrics: PrivacyMetrics) => {
     if (sanitizedUrl) URL.revokeObjectURL(sanitizedUrl)
     const url = URL.createObjectURL(blob)
     setSanitizedBlob(blob)
+    setPrivacyMetrics(metrics)
     setSanitizedUrl(url)
     setDurationMs(duration)
     setStartMs(0)
     setEndMs(duration)
-    setMessage('Vídeo anonimizado gerado localmente. Revise antes de publicar.')
+    setMessage('Vídeo anonimizado gerado localmente. Revise a versão final antes de publicar.')
   }
 
   const getLocation = () => {
@@ -88,8 +91,8 @@ export default function ReportForm({ onCreated }: Props) {
   }
 
   const publish = async () => {
-    if (!file || !sanitizedBlob || !location || !category) {
-      setMessage('Complete vídeo anonimizado, categoria e localização antes de publicar.')
+    if (!file || !sanitizedBlob || !privacyMetrics || !location || !category) {
+      setMessage('Complete vídeo anonimizado, revisão de privacidade, categoria e localização antes de publicar.')
       return
     }
     setPublishing(true)
@@ -105,6 +108,7 @@ export default function ReportForm({ onCreated }: Props) {
       form.append('location_precision_m', String(location.precision))
       form.append('duration_ms', String(durationMs))
       form.append('privacy_reviewed', 'true')
+      form.append('privacy_metrics_json', JSON.stringify(privacyMetrics))
       form.append('video', new File([sanitizedBlob], 'sanitized.webm', { type: 'video/webm' }))
       await createReport(form)
       setMessage('Ocorrência publicada com sucesso.')
@@ -122,21 +126,17 @@ export default function ReportForm({ onCreated }: Props) {
   return (
     <main className="content-grid">
       <section className="intro-card">
-        <span className="eyebrow">Novo registro</span>
+        <span className="eyebrow">Novo registro · v0.2</span>
         <h2>Documente uma barreira sem expor pessoas</h2>
-        <p>O fluxo foi desenhado para que o vídeo original permaneça no dispositivo e apenas a cópia revisada seja publicada.</p>
+        <p>O vídeo original permanece no dispositivo. A IA pode sugerir rostos, mas toda máscara exige decisão humana antes da publicação.</p>
       </section>
 
       <section className="panel">
         <h3>1. Vídeo e categoria</h3>
         <label className="field">
           Vídeo curto
-          <input
-            type="file"
-            accept="video/*"
-            capture="environment"
-            onChange={e => chooseFile(e.target.files?.[0] || null)}
-          />
+          <input type="file" accept="video/*" capture="environment"
+            onChange={e => chooseFile(e.target.files?.[0] || null)} />
           <small>Em celulares compatíveis, você poderá gravar com a câmera ou escolher um arquivo.</small>
         </label>
 
@@ -149,12 +149,8 @@ export default function ReportForm({ onCreated }: Props) {
 
         <label className="field">
           Observação opcional
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            maxLength={280}
-            placeholder="Ex.: rampa interrompida por degrau e poste."
-          />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} maxLength={280}
+            placeholder="Ex.: rampa interrompida por degrau e poste." />
         </label>
       </section>
 
@@ -170,28 +166,26 @@ export default function ReportForm({ onCreated }: Props) {
           </div>
           <video src={sanitizedUrl} controls playsInline className="source-video" />
 
+          {privacyMetrics && (
+            <div className="privacy-summary">
+              <strong>Resumo da proteção</strong>
+              <span>{privacyMetrics.manualMasks} máscara(s) manual(is)</span>
+              <span>{privacyMetrics.acceptedSuggestions}/{privacyMetrics.suggestedMasks} sugestão(ões) de IA aceita(s)</span>
+              <span>Detecção: {privacyMetrics.detectionTimeMs} ms</span>
+              <span>Anonimização: {privacyMetrics.sanitizationTimeMs} ms</span>
+            </div>
+          )}
+
           <div className="range-grid">
             <label>
               Início da barreira: {(startMs / 1000).toFixed(1)} s
-              <input
-                type="range"
-                min={0}
-                max={durationMs}
-                step={100}
-                value={startMs}
-                onChange={e => setStartMs(Math.min(Number(e.target.value), endMs))}
-              />
+              <input type="range" min={0} max={durationMs} step={100} value={startMs}
+                onChange={e => setStartMs(Math.min(Number(e.target.value), endMs))} />
             </label>
             <label>
               Fim da barreira: {(endMs / 1000).toFixed(1)} s
-              <input
-                type="range"
-                min={0}
-                max={durationMs}
-                step={100}
-                value={endMs}
-                onChange={e => setEndMs(Math.max(Number(e.target.value), startMs))}
-              />
+              <input type="range" min={0} max={durationMs} step={100} value={endMs}
+                onChange={e => setEndMs(Math.max(Number(e.target.value), startMs))} />
             </label>
           </div>
           <small>Duração aproximada do vídeo: {maxSeconds} s.</small>
@@ -214,7 +208,8 @@ export default function ReportForm({ onCreated }: Props) {
 
       {message && <div className="status-message" role="status">{message}</div>}
 
-      <button type="button" className="primary publish-button" onClick={publish} disabled={publishing || !sanitizedBlob || !location}>
+      <button type="button" className="primary publish-button" onClick={publish}
+        disabled={publishing || !sanitizedBlob || !privacyMetrics || !location}>
         {publishing ? 'Publicando…' : 'Publicar ocorrência revisada'}
       </button>
     </main>
