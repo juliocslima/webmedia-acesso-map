@@ -7,6 +7,7 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import App from './App'
 import './styles.css'
+import './v02.css'
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
