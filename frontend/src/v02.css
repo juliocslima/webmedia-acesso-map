@@ -19,6 +19,19 @@
   min-height: 44px;
 }
 .ai-action:disabled { opacity: .5; cursor: not-allowed; }
+.temporal-toolbar { flex-wrap: wrap; }
+.track-editor {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #b9d7dc;
+  background: #f2f9fa;
+}
+.track-editor > span { color: #48646c; font-size: .9rem; }
+.track-editor small { color: #61757c; line-height: 1.4; }
+.track-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .mask-list { display: grid; gap: 8px; }
 .mask-item {
   display: flex;
@@ -31,7 +44,19 @@
   background: #f8fbfc;
 }
 .mask-item.suggested { border-color: #e6bd72; background: #fffaf0; }
+.mask-item.selected { box-shadow: 0 0 0 3px rgba(12, 91, 104, .14); border-color: #75aeb7; }
 .mask-item > div { display: flex; gap: 6px; }
+.track-select {
+  flex: 1;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #173d47;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 700;
+}
+.track-select:hover { text-decoration: underline; }
 .mask-accept, .mask-remove {
   border-radius: 8px;
   padding: 7px 10px;
@@ -63,5 +88,7 @@
 .privacy-summary span { color: #48646c; font-size: .9rem; }
 @media (max-width: 720px) {
   .mask-item { align-items: flex-start; flex-direction: column; }
+  .mask-item > div, .track-actions { width: 100%; }
+  .track-actions > button { flex: 1 1 150px; }
   .privacy-summary { grid-template-columns: 1fr; }
 }
