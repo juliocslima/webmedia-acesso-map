@@ -1,0 +1,70 @@
+cff-version: 1.2.0
+message: >-
+  If you use this artifact in your research, please cite both the
+  AcessoMap Video software artifact (using the version-specific Zenodo DOI)
+  and the associated paper accepted at WFA / WebMedia 2026.
+title: "AcessoMap Video: Research Artifact"
+type: software
+version: "0.3.0"
+license: MIT
+
+authors:
+  - given-names: "Júlio César Sousa de"
+    family-names: "Lima"
+  - given-names: "Marco Túlio Amaral"
+    family-names: "Silva"
+  - given-names: "Luiz Henrique Andrade"
+    family-names: "Correia"
+  - given-names: "André de Lima"
+    family-names: "Salgado"
+  - given-names: "Mayron César de Oliveira"
+    family-names: "Moreira"
+
+doi: "10.5281/zenodo.22998022"
+url: "https://doi.org/10.5281/zenodo.22998022"
+date-released: "2026-09-27"
+
+keywords:
+  - urban accessibility
+  - crowdsensing
+  - collaborative mapping
+  - multimedia annotation
+  - on-device video redaction
+  - human-in-the-loop
+  - face detection
+  - temporal tracking
+  - privacy-aware web applications
+
+abstract: >-
+  Research software artifact accompanying the paper "AcessoMap Video:
+  Mapeamento Colaborativo e Sensível à Privacidade de Barreiras de
+  Acessibilidade Urbana", accepted at the XXV Workshop de Ferramentas
+  e Aplicações (WFA), WebMedia 2026. The artifact provides the v0.3.0
+  source code and containerized environment for a mobile-first
+  Progressive Web App that supports collaborative reporting of urban
+  accessibility barriers through short georeferenced videos. It combines
+  on-device face detection, human-reviewed spatiotemporal masks,
+  keyframe-based tracking, visual redaction, approximate geolocation,
+  a collaborative map, community validation, and CSV/GeoJSON exports.
+  Its accompanying documentation describes the functional validation
+  workflow and known limitations; quantitative anonymization accuracy
+  and usability evaluations are not claimed by this release.
+
+preferred-citation:
+  type: conference-paper
+  title: "AcessoMap Video: Mapeamento Colaborativo e Sensível à Privacidade de Barreiras de Acessibilidade Urbana"
+  authors:
+    - given-names: "Júlio César Sousa de"
+      family-names: "Lima"
+    - given-names: "Marco Túlio Amaral"
+      family-names: "Silva"
+    - given-names: "Luiz Henrique Andrade"
+      family-names: "Correia"
+    - given-names: "André de Lima"
+      family-names: "Salgado"
+    - given-names: "Mayron César de Oliveira"
+      family-names: "Moreira"
+  conference:
+    name: "XXV Workshop de Ferramentas e Aplicações (WFA 2026), WebMedia 2026"
+  year: 2026
+  doi: "10.5281/zenodo.22998022"

@@ -30,7 +30,7 @@ CATEGORIES = {
     "blocked_access": "Acesso bloqueado",
 }
 
-app = FastAPI(title="AcessoMap Video API", version="0.2.0")
+app = FastAPI(title="AcessoMap Video API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -125,7 +125,7 @@ def serialize_report(row: sqlite3.Row, confirms: int = 0, disputes: int = 0) -> 
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "version": "0.2.0"}
+    return {"status": "ok", "version": "0.3.0"}
 
 
 @app.get("/api/categories")
@@ -207,7 +207,7 @@ async def create_report(
                 video.content_type or "video/webm",
                 duration_ms,
                 int(privacy_reviewed),
-                json.dumps(metrics, ensure_ascii=False, separators=(",", ":")),
+                json.dumps(metrics, ensure_ascii=False),
                 now,
             ),
         )
@@ -328,31 +328,45 @@ def export_geojson():
 @app.get("/api/exports/csv")
 def export_csv():
     data = list_reports()["items"]
-    output = io.StringIO()
     fields = [
         "id", "category", "category_label", "description", "start_ms", "end_ms",
         "lat", "lon", "location_precision_m", "duration_ms", "created_at",
-        "face_detection", "manual_masks", "suggested_masks", "accepted_suggestions",
-        "rejected_suggestions", "detection_time_ms", "sanitization_time_ms",
-        "confirms", "disputes", "confidence",
+        "confirms", "disputes", "confidence", "manual_masks", "suggested_masks",
+        "accepted_suggestions", "rejected_suggestions", "detection_time_ms",
+        "sanitization_time_ms", "temporal_tracks", "keyframes", "tracking_samples",
+        "tracking_time_ms",
     ]
+    output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields)
     writer.writeheader()
     for item in data:
-        metrics = item.get("privacy_metrics") or {}
+        privacy = item.get("privacy_metrics") or {}
         writer.writerow(
             {
-                **{k: item.get(k) for k in fields if k in item},
-                "face_detection": metrics.get("faceDetection"),
-                "manual_masks": metrics.get("manualMasks"),
-                "suggested_masks": metrics.get("suggestedMasks"),
-                "accepted_suggestions": metrics.get("acceptedSuggestions"),
-                "rejected_suggestions": metrics.get("rejectedSuggestions"),
-                "detection_time_ms": metrics.get("detectionTimeMs"),
-                "sanitization_time_ms": metrics.get("sanitizationTimeMs"),
+                "id": item["id"],
+                "category": item["category"],
+                "category_label": item["category_label"],
+                "description": item["description"],
+                "start_ms": item["start_ms"],
+                "end_ms": item["end_ms"],
+                "lat": item["lat"],
+                "lon": item["lon"],
+                "location_precision_m": item["location_precision_m"],
+                "duration_ms": item["duration_ms"],
+                "created_at": item["created_at"],
                 "confirms": item["validations"]["confirms"],
                 "disputes": item["validations"]["disputes"],
                 "confidence": item["validations"]["confidence"],
+                "manual_masks": privacy.get("manualMasks"),
+                "suggested_masks": privacy.get("suggestedMasks"),
+                "accepted_suggestions": privacy.get("acceptedSuggestions"),
+                "rejected_suggestions": privacy.get("rejectedSuggestions"),
+                "detection_time_ms": privacy.get("detectionTimeMs"),
+                "sanitization_time_ms": privacy.get("sanitizationTimeMs"),
+                "temporal_tracks": privacy.get("temporalTracks"),
+                "keyframes": privacy.get("keyframes"),
+                "tracking_samples": privacy.get("trackingSamples"),
+                "tracking_time_ms": privacy.get("trackingTimeMs"),
             }
         )
     raw = output.getvalue().encode("utf-8")

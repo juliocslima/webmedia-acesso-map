@@ -20,6 +20,10 @@ export type PrivacyMetrics = {
   rejectedSuggestions: number
   detectionTimeMs: number
   sanitizationTimeMs: number
+  temporalTracks: number
+  keyframes: number
+  trackingSamples: number
+  trackingTimeMs: number
 }
 
 export type ReportItem = {
@@ -41,14 +45,33 @@ export type ReportItem = {
   validations: ValidationSummary
 }
 
-export type PrivacyMask = {
+export type MaskBox = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export type MaskKeyframe = MaskBox & {
+  timeMs: number
+  confidence?: number
+  source: 'manual' | 'ai'
+}
+
+export type PrivacyTrack = {
+  id: string
+  kind: 'face' | 'plate'
+  source: 'manual' | 'ai-suggestion'
+  accepted: boolean
+  startMs: number
+  endMs: number
+  keyframes: MaskKeyframe[]
+}
+
+export type PrivacyMask = MaskBox & {
   id: string
   kind: 'face' | 'plate'
   source: 'manual' | 'ai-suggestion'
   accepted: boolean
   confidence?: number
-  x: number
-  y: number
-  width: number
-  height: number
 }
