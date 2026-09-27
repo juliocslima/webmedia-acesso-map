@@ -30,7 +30,7 @@ CATEGORIES = {
     "blocked_access": "Acesso bloqueado",
 }
 
-app = FastAPI(title="AcessoMap Video API", version="0.1.0")
+app = FastAPI(title="AcessoMap Video API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -62,6 +62,7 @@ def init_db() -> None:
                 video_mime TEXT NOT NULL,
                 duration_ms INTEGER NOT NULL DEFAULT 0,
                 privacy_reviewed INTEGER NOT NULL DEFAULT 1,
+                privacy_metrics_json TEXT NOT NULL DEFAULT '{}',
                 created_at TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'published'
             );
@@ -77,9 +78,22 @@ def init_db() -> None:
             );
             """
         )
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(reports)").fetchall()}
+        if "privacy_metrics_json" not in columns:
+            conn.execute("ALTER TABLE reports ADD COLUMN privacy_metrics_json TEXT NOT NULL DEFAULT '{}'")
 
 
 init_db()
+
+
+def parse_privacy_metrics(raw: str | None) -> dict | None:
+    if not raw:
+        return None
+    try:
+        value = json.loads(raw)
+        return value if isinstance(value, dict) else None
+    except json.JSONDecodeError:
+        return None
 
 
 def serialize_report(row: sqlite3.Row, confirms: int = 0, disputes: int = 0) -> dict:
@@ -97,6 +111,7 @@ def serialize_report(row: sqlite3.Row, confirms: int = 0, disputes: int = 0) -> 
         "location_precision_m": row["location_precision_m"],
         "duration_ms": row["duration_ms"],
         "privacy_reviewed": bool(row["privacy_reviewed"]),
+        "privacy_metrics": parse_privacy_metrics(row["privacy_metrics_json"]),
         "created_at": row["created_at"],
         "status": row["status"],
         "video_url": f"/api/reports/{row['id']}/video",
@@ -110,7 +125,7 @@ def serialize_report(row: sqlite3.Row, confirms: int = 0, disputes: int = 0) -> 
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "0.3.0"}
 
 
 @app.get("/api/categories")
@@ -129,6 +144,7 @@ async def create_report(
     location_precision_m: int = Form(50),
     duration_ms: int = Form(0),
     privacy_reviewed: bool = Form(True),
+    privacy_metrics_json: str = Form("{}"),
     video: UploadFile = File(...),
 ) -> dict:
     if category not in CATEGORIES:
@@ -141,6 +157,17 @@ async def create_report(
         raise HTTPException(400, "A revisão de privacidade é obrigatória")
     if video.content_type not in {"video/webm", "video/mp4", "video/quicktime", "application/octet-stream"}:
         raise HTTPException(415, f"Formato de vídeo não suportado: {video.content_type}")
+
+    try:
+        metrics = json.loads(privacy_metrics_json)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(400, "Métricas de privacidade inválidas") from exc
+    if not isinstance(metrics, dict):
+        raise HTTPException(400, "Métricas de privacidade inválidas")
+    if metrics.get("rawVideoUploaded") is not False:
+        raise HTTPException(400, "O registro deve declarar que o vídeo bruto não foi enviado")
+    if metrics.get("humanReviewed") is not True:
+        raise HTTPException(400, "A revisão humana de privacidade é obrigatória")
 
     report_id = str(uuid.uuid4())
     ext = ".webm" if video.content_type == "video/webm" else ".mp4"
@@ -164,8 +191,8 @@ async def create_report(
             INSERT INTO reports (
               id, category, description, start_ms, end_ms, lat, lon,
               location_precision_m, video_filename, video_mime, duration_ms,
-              privacy_reviewed, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              privacy_reviewed, privacy_metrics_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 report_id,
@@ -180,6 +207,7 @@ async def create_report(
                 video.content_type or "video/webm",
                 duration_ms,
                 int(privacy_reviewed),
+                json.dumps(metrics, ensure_ascii=False),
                 now,
             ),
         )
@@ -300,21 +328,45 @@ def export_geojson():
 @app.get("/api/exports/csv")
 def export_csv():
     data = list_reports()["items"]
-    output = io.StringIO()
     fields = [
         "id", "category", "category_label", "description", "start_ms", "end_ms",
         "lat", "lon", "location_precision_m", "duration_ms", "created_at",
-        "confirms", "disputes", "confidence",
+        "confirms", "disputes", "confidence", "manual_masks", "suggested_masks",
+        "accepted_suggestions", "rejected_suggestions", "detection_time_ms",
+        "sanitization_time_ms", "temporal_tracks", "keyframes", "tracking_samples",
+        "tracking_time_ms",
     ]
+    output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields)
     writer.writeheader()
     for item in data:
+        privacy = item.get("privacy_metrics") or {}
         writer.writerow(
             {
-                **{k: item.get(k) for k in fields if k not in {"confirms", "disputes", "confidence"}},
+                "id": item["id"],
+                "category": item["category"],
+                "category_label": item["category_label"],
+                "description": item["description"],
+                "start_ms": item["start_ms"],
+                "end_ms": item["end_ms"],
+                "lat": item["lat"],
+                "lon": item["lon"],
+                "location_precision_m": item["location_precision_m"],
+                "duration_ms": item["duration_ms"],
+                "created_at": item["created_at"],
                 "confirms": item["validations"]["confirms"],
                 "disputes": item["validations"]["disputes"],
                 "confidence": item["validations"]["confidence"],
+                "manual_masks": privacy.get("manualMasks"),
+                "suggested_masks": privacy.get("suggestedMasks"),
+                "accepted_suggestions": privacy.get("acceptedSuggestions"),
+                "rejected_suggestions": privacy.get("rejectedSuggestions"),
+                "detection_time_ms": privacy.get("detectionTimeMs"),
+                "sanitization_time_ms": privacy.get("sanitizationTimeMs"),
+                "temporal_tracks": privacy.get("temporalTracks"),
+                "keyframes": privacy.get("keyframes"),
+                "tracking_samples": privacy.get("trackingSamples"),
+                "tracking_time_ms": privacy.get("trackingTimeMs"),
             }
         )
     raw = output.getvalue().encode("utf-8")

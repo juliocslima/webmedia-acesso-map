@@ -1,0 +1,94 @@
+.ai-notice {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff8e8;
+  border: 1px solid #efd7a2;
+  color: #6e551e;
+  font-size: .9rem;
+  line-height: 1.45;
+}
+.ai-action {
+  border: 1px solid #0c5b68;
+  background: #e8f5f6;
+  color: #0c5b68;
+  border-radius: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+}
+.ai-action:disabled { opacity: .5; cursor: not-allowed; }
+.temporal-toolbar { flex-wrap: wrap; }
+.track-editor {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #b9d7dc;
+  background: #f2f9fa;
+}
+.track-editor > span { color: #48646c; font-size: .9rem; }
+.track-editor small { color: #61757c; line-height: 1.4; }
+.track-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.mask-list { display: grid; gap: 8px; }
+.mask-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #d5e1e4;
+  border-radius: 10px;
+  background: #f8fbfc;
+}
+.mask-item.suggested { border-color: #e6bd72; background: #fffaf0; }
+.mask-item.selected { box-shadow: 0 0 0 3px rgba(12, 91, 104, .14); border-color: #75aeb7; }
+.mask-item > div { display: flex; gap: 6px; }
+.track-select {
+  flex: 1;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #173d47;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 700;
+}
+.track-select:hover { text-decoration: underline; }
+.mask-accept, .mask-remove {
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.mask-accept { border: 1px solid #9cc9b7; background: #eef8f3; color: #185c41; }
+.mask-remove { border: 1px solid #dec4c0; background: #fff6f4; color: #7a3429; }
+.review-warning {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff3d6;
+  border: 1px solid #edcf86;
+  color: #735716;
+  font-weight: 700;
+}
+.privacy-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f2f8f8;
+  border: 1px solid #d2e4e5;
+  margin: 8px 0 18px;
+}
+.privacy-summary strong { grid-column: 1 / -1; color: #123b46; }
+.privacy-summary span { color: #48646c; font-size: .9rem; }
+@media (max-width: 720px) {
+  .mask-item { align-items: flex-start; flex-direction: column; }
+  .mask-item > div, .track-actions { width: 100%; }
+  .track-actions > button { flex: 1 1 150px; }
+  .privacy-summary { grid-template-columns: 1fr; }
+}
